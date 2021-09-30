@@ -1,4 +1,11 @@
-import { createContext, ReactNode, useContext, useState } from "react";
+import {
+  createContext,
+  ReactNode,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { toast } from "react-toastify";
 import { api } from "../services/api";
 import { Product, Stock } from "../types";
@@ -30,7 +37,18 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
 
     return [];
   });
+  const prevCartRef = useRef<Product[]>();
+  useEffect(() => {
+    prevCartRef.current = cart;
+  });
 
+  const cartPrevValue = prevCartRef.current ?? cart;
+
+  useEffect(() => {
+    if (cartPrevValue !== cart) {
+      localStorage.setItem("@RocketShoes:cart", JSON.stringify(cart));
+    }
+  }, [cart, cartPrevValue]);
   const addProduct = async (productId: number) => {
     try {
       //resgatar todos os produtos
@@ -58,7 +76,7 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
         updatedProduct.push(newProduct);
       }
       setCart(updatedProduct);
-      localStorage.setItem("@RocketShoes:cart", JSON.stringify(updatedProduct));
+ 
     } catch {
       toast.error("Erro na adição do produto");
     }
@@ -73,7 +91,7 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
       if (productExists >= 0) {
         removeCart.splice(productExists, 1);
         setCart(removeCart);
-        localStorage.setItem("@RocketShoes:cart", JSON.stringify(removeCart));
+       
       } else {
         toast.error("Erro na remoção do produto");
       }
@@ -103,13 +121,10 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
       if (productLess) {
         productLess.amount = amount;
         setCart(updatedAmount);
-        localStorage.setItem(
-          "@RocketShoes:cart",
-          JSON.stringify(updatedAmount)
-        );
+      
       } else {
         toast.error("Erro na alteração de quantidade do produto");
-        return
+        return;
       }
     } catch {
       toast.error("Erro na alteração de quantidade do produto");
